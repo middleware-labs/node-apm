@@ -2,7 +2,7 @@ const { logs, SeverityNumber } = require('@opentelemetry/api-logs');
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-grpc');
 const { LoggerProvider, SimpleLogRecordProcessor } = require('@opentelemetry/sdk-logs');
 const {Resource} = require("@opentelemetry/resources");
-const {SEMRESATTRS_SERVICE_NAME} = require("@opentelemetry/semantic-conventions");
+let {SEMRESATTRS_SERVICE_NAME} = require("@opentelemetry/semantic-conventions");
 const fs = require('fs');
 const path = require('path');
 const packageJsonPath = path.resolve(__dirname,'..','..', 'package.json');
@@ -34,9 +34,13 @@ const log = (level: string, message: string, attributes: Record<string, any> = {
 };
 
 export const loggerInitializer = (config: Config): void => {
+    if (SEMRESATTRS_SERVICE_NAME === "undefined" || SEMRESATTRS_SERVICE_NAME === undefined) {
+        SEMRESATTRS_SERVICE_NAME = "service.name"
+    }
+
     const loggerProvider = new LoggerProvider({
         resource: new Resource({
-            [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
+            [SEMRESATTRS_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || process.env.MW_SERVICE_NAME || config.serviceName,
             ['mw_agent']: true,
             ['project.name']: config.projectName,
             ['mw.account_key']: config.accessToken,

@@ -1,6 +1,6 @@
 {
   "name": "@middleware.io/node-apm",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Middleware exporter for NodeJS",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",

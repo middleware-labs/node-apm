@@ -1,5 +1,5 @@
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+let {SEMRESATTRS_SERVICE_NAME} = require("@opentelemetry/semantic-conventions");
 import { Resource } from '@opentelemetry/resources';
 import {
     MeterProvider,
@@ -19,9 +19,12 @@ export const init = (config: Config): void => {
     });
     const serviceName = config.serviceName;
     const projectName = config.projectName;
+    if (SEMRESATTRS_SERVICE_NAME === "undefined" || SEMRESATTRS_SERVICE_NAME === undefined) {
+        SEMRESATTRS_SERVICE_NAME = "service.name"
+    }
     const meterProvider = new MeterProvider({
         resource: new Resource({
-            [SEMRESATTRS_SERVICE_NAME]: serviceName,
+            [SEMRESATTRS_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || process.env.MW_SERVICE_NAME || serviceName,
             ['mw_agent']: true,
             ['project.name']: projectName,
             ['mw.account_key']: config.accessToken,
