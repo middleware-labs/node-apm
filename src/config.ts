@@ -26,7 +26,8 @@ export interface Config {
     consoleError:boolean;
     meterProvider:any,
     isServerless:boolean,
-    customResourceAttributes: ResourceAttributes
+    customResourceAttributes: ResourceAttributes;
+    disabledInstrumentations: string;
 }
 
 let customResourceAttributes: ResourceAttributes = {};
@@ -53,6 +54,7 @@ export let configDefault: Config = {
     meterProvider:false,
     isServerless:false,
     customResourceAttributes: customResourceAttributes,
+    disabledInstrumentations: ''
 };
 
 export const init = (config: Partial<Config> = {}): Config => {
