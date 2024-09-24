@@ -1,54 +1,25 @@
-import { log } from "./logger";
 import axios from "axios";
+import { structuredLog } from "./utils";
 
-// ANSI escape codes for colors
-const colors = {
-  reset: "\x1b[0m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  red: "\x1b[31m",
-};
-
-const colorLog = (
-  level: string,
-  message: string,
-  attributes: Record<string, any> = {}
-) => {
-  let color = colors.reset;
-  switch (level) {
-    case "INFO":
-      color = colors.green;
-      break;
-    case "WARN":
-      color = colors.yellow;
-      break;
-    case "ERROR":
-      color = colors.red;
-      break;
-  }
-  console.log(`${color}${level}: ${message}${colors.reset}`, attributes);
-  log(level, message, attributes);
-};
+const HEALTHCHECK_FAILED_MESSAGE = `MW Agent Healthcheck is failing ... This could be due to incorrect value of MW_AGENT_SERVICE
+Ignore the warning if you are using MW Agent older than 1.7.7 (You can confirm by running mw-agent version`;
 
 export const performHealthCheck = (host: string): Promise<void> => {
-  //const endpoint = `${host}:13133/health`;
-  const endpoint = `http://localhost:13133/health`;
+  const endpoint = `${host}:13133/health`;
   return axios
     .get(endpoint)
     .then((response) => {
       if (response.status === 200) {
-        colorLog("INFO", "Health check to MW Agent passed", {
+        structuredLog("INFO", "Health check to MW Agent passed", {
           status: response.status,
         });
       } else {
-        colorLog("WARN", "Health check to MW Agent returned non-200 status", {
+        structuredLog("WARN", HEALTHCHECK_FAILED_MESSAGE, {
           status: response.status,
         });
       }
     })
     .catch((error) => {
-      colorLog("ERROR", "Health check o MW Agent failed", {
-        error: error.message,
-      });
+      structuredLog("WARN", HEALTHCHECK_FAILED_MESSAGE);
     });
 };

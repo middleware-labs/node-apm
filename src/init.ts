@@ -10,16 +10,19 @@ import {
   Tracer,
 } from "@opentelemetry/api";
 import { performHealthCheck } from "./healthcheck";
+import { shutdown } from "./tracer-collector";
 export const track = (newConfig: Partial<Config> | undefined = {}): void => {
   const config = configInit(newConfig);
   profilerInit(config).then((r) => {});
   // Perform Health check to MW Agent
-  if (!configDefault["isServerless"] || true) {
+  if (!configDefault["isServerless"]) {
     // Perform in async way as (synchronous import)
     performHealthCheck(config?.host).then((r) => {});
   }
 };
-
+export const sdkShutdown = (): Promise<void> => {
+  return shutdown();
+};
 export const info = (
   message: string,
   attributes: Record<string, any> = {}

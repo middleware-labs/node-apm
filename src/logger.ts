@@ -4,48 +4,38 @@ import {
   BatchLogRecordProcessor,
   ConsoleLogRecordExporter,
   LoggerProvider,
-  SimpleLogRecordProcessor,
+  LogRecordExporter,
 } from "@opentelemetry/sdk-logs";
 import { Resource } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import fs from "fs";
 import path from "path";
-const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 import { format } from "logform";
 const { errors } = format;
 const errorsFormat = errors({ stack: true });
 let transformError = errorsFormat.transform;
 import { Config } from "./config";
+import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 
-// const log = (
-//   level: string,
-//   message: string | Error,
-//   attributes: Record<string, any> = {}
-// ): void => {
-//   let msgbody = "";
-//   let body: string;
-//   if (message instanceof Error) {
-//     body = message.stack || message.message;
-//     attributes.stack = message.stack;
-//   } else {
-//     body = message;
-//   }
-//   const logger = logs.getLogger(packageJson.name, packageJson.version);
-//   const severityNumber = SeverityNumber[level as keyof typeof SeverityNumber];
-//   logger.emit({
-//     severityNumber,
-//     severityText: level,
-//     body: msgbody,
-//     attributes: {
-//       "mw.app.lang": "nodejs",
-//       level: level.toLowerCase(),
-//       ...(typeof attributes === "object" && Object.keys(attributes).length
-//         ? attributes
-//         : {}),
-//     },
-//   });
-// };
+let logPackageName;
+let logPackageVersion;
+try {
+  // Check for Package json in root project context
+  const packageJsonPath = path.resolve(__dirname, "..", "..", "package.json");
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+  logPackageName = packageJson.name;
+  logPackageVersion = packageJson.version;
+} catch (e) {
+  // Reverting to default values
+  logPackageName = "unknown-package";
+  logPackageVersion = "0.0.0";
+}
+
+/* Need this as maybe in client side ATTR_SERVICE_NAME results undefined due to version issues*/
+let SERVICE_NAME = ATTR_SERVICE_NAME;
+if (SERVICE_NAME === undefined) {
+  SERVICE_NAME = "service.name";
+}
 
 const log = (
   level: string,
@@ -60,7 +50,7 @@ const log = (
     // @ts-ignore
     attributes["stack"] = stack && stack.stack ? stack.stack : "";
   }
-  const logger = logs.getLogger(packageJson.name, packageJson.version);
+  const logger = logs.getLogger(logPackageName, logPackageVersion);
   // @ts-ignore
   const severityNumber = SeverityNumber[level];
   logger.emit({
@@ -80,7 +70,7 @@ const log = (
 export const loggerInitializer = (config: Config): void => {
   const loggerProvider = new LoggerProvider({
     resource: new Resource({
-      [ATTR_SERVICE_NAME]: config.serviceName,
+      [SERVICE_NAME]: config.serviceName,
       ["mw_agent"]: true,
       ["project.name"]: config.projectName,
       ["mw.account_key"]: config.accessToken,
@@ -89,16 +79,21 @@ export const loggerInitializer = (config: Config): void => {
     }),
   });
 
-  console.log("logger config.target", config.target);
   loggerProvider.addLogRecordProcessor(
-    new BatchLogRecordProcessor(new OTLPLogExporter({ url: config.target }))
+    new BatchLogRecordProcessor(getLogsExporter(config))
   );
 
   logs.setGlobalLoggerProvider(loggerProvider);
 
-  const logger = loggerProvider.getLogger("example-logger");
+  /**
+   * Bootstrap Logger Initialization
+   * This section initializes the logger for the application's bootstrap process.
+   * It creates a logger instance and emits the first log message indicating
+   * that the logger has been successfully initialized.
+   */
+  const logger = loggerProvider.getLogger("init-logger");
   logger.emit({
-    body: "example-log",
+    body: "Bootstrap: Logger initialized",
     attributes: {
       "mw.app.lang": "nodejs",
     },
@@ -119,5 +114,15 @@ export const loggerInitializer = (config: Config): void => {
     };
   }
 };
+
+function getLogsExporter(config: Config): LogRecordExporter {
+  if (config.consoleExporter) {
+    return new ConsoleLogRecordExporter();
+  }
+  return new OTLPLogExporter({
+    url: config.target,
+    compression: CompressionAlgorithm.GZIP,
+  });
+}
 
 export { log };

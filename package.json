@@ -1,12 +1,15 @@
 {
   "name": "@middleware.io/node-apm",
-  "version": "1.5.1",
+  "version": "2.0.0-rc.11",
   "description": "Middleware exporter for NodeJS",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
   "scripts": {
     "build": "tsc --declaration",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "exports": {
     ".": "./lib/src/index.js"
@@ -25,6 +28,10 @@
     "@opentelemetry/instrumentation-grpc": "^0.53.0",
     "@opentelemetry/instrumentation-mongoose": "^0.42.0",
     "@opentelemetry/propagator-b3": "^1.26.0",
+    "@opentelemetry/resource-detector-aws": "^1.6.1",
+    "@opentelemetry/resource-detector-azure": "^0.2.11",
+    "@opentelemetry/resource-detector-container": "^0.4.1",
+    "@opentelemetry/resource-detector-gcp": "^0.29.11",
     "@opentelemetry/resources": "^1.26.0",
     "@opentelemetry/sdk-logs": "^0.53.0",
     "@opentelemetry/sdk-metrics": "1.26.0",
@@ -37,14 +44,10 @@
     "@wdalmut/opentelemetry-plugin-mongoose": "^0.2.3",
     "express": "^4.18.1",
     "logform": "^2.6.1",
-    "nan": "^2.15.0",
-    "node-addon-api": "^4.3.0",
     "node-fetch": "^2.6.0",
-    "node-gyp": "^9.0.0",
     "opentelemetry-node-metrics": "^3.0.0",
     "process": "^0.11.10"
   },
-  "gypfile": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/middleware-labs/node-apm-ts.git"
@@ -52,10 +55,17 @@
   "bugs": {
     "url": "https://github.com/middleware-labs/node-apm-ts/issues"
   },
+  "files": [
+    "lib",
+    "README.md"
+  ],
   "homepage": "https://github.com/middleware-labs/node-apm-ts#readme",
   "devDependencies": {
+    "@types/jest": "^29.5.13",
     "@types/mongodb": "^4.0.7",
     "@types/node": "^20.14.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.4.5"
   }
 }
