@@ -21,7 +21,6 @@ let sdk: NodeSDK | null = null;
 
 export const init = (config: Config) => {
   const apm_pause_traces = config.pauseTraces === true;
-  const apm_pause_traces = config.pauseTraces === true;
 
   if (!apm_pause_traces) {
     sdk = new NodeSDK({
@@ -49,8 +48,6 @@ export const init = (config: Config) => {
       ],
     });
 
-    sdk.start();
-  }
     sdk.start();
   }
 };
