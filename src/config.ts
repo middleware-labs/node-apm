@@ -35,9 +35,9 @@ export interface Config {
 
 const WARNINGS = {
   MISSING_ACCESS_TOKEN:
-    "WARN: Missing access token. Specify either MW_ACCESS_TOKEN environment variable or accessToken in the options parameter.",
+    "Missing access token. Specify either MW_ACCESS_TOKEN environment variable or accessToken in the options parameter.",
   MISSING_SERVICE_NAME:
-    "WARN: Missing service name. Specify either MW_SERVICE_NAME environment variable or serviceName in the options parameter.",
+    "Missing service name. Specify either MW_SERVICE_NAME environment variable or serviceName in the options parameter.",
 };
 
 let customResourceAttributes: ResourceAttributes = {};

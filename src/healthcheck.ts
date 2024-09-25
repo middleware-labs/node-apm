@@ -5,7 +5,10 @@ const HEALTHCHECK_FAILED_MESSAGE = `MW Agent Healthcheck is failing ... This cou
 Ignore the warning if you are using MW Agent older than 1.7.7 (You can confirm by running mw-agent version`;
 
 export const performHealthCheck = (host: string): Promise<void> => {
-  const endpoint = `${host}:13133/health`;
+  let endpoint = `${host}:13133/health`;
+  if (!endpoint.startsWith("http")) {
+    endpoint = "http://" + endpoint;
+  }
   return axios
     .get(endpoint)
     .then((response) => {
