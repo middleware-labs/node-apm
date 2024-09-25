@@ -18,7 +18,7 @@ export const init = async (config: Config): Promise<Config> => {
                 const data = response.data;
 
                 if (data.success === true) {
-                    const account = data.data.account;
+                    const account = data.data.project_uid;
 
                     if (typeof account === 'string') {
                         const TenantID = account;
