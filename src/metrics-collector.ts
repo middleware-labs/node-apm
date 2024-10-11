@@ -33,6 +33,7 @@ export const init = (config: Config): void => {
       ["runtime.metrics.nodejs"]: true,
       ["mw.app.lang"]: "nodejs",
       ["mw_serverless"]: config.isServerless ? 1 : 0,
+      ["mw.sdk.version"]: config.sdkVersion,
       ...config.customResourceAttributes,
     }),
     readers: [metricReader],

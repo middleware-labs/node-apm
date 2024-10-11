@@ -1,6 +1,7 @@
 // Mock the structuredLog function
 jest.mock("./../src/utils", () => ({
   structuredLog: jest.fn(),
+  getPackageVersion: jest.fn(),
   parseBoolean: jest.requireActual("./../src/utils").parseBoolean,
 }));
 import { structuredLog, parseBoolean } from "../src/utils";

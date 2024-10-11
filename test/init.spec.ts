@@ -8,6 +8,7 @@ import { loggerInitializer } from "../src/logger";
 // Mock only structuredLog function
 jest.mock("../src/utils", () => ({
   structuredLog: jest.fn(),
+  getPackageVersion: jest.fn(),
   parseBoolean: jest.requireActual("./../src/utils").parseBoolean,
 }));
 

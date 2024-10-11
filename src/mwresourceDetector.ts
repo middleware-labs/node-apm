@@ -42,7 +42,7 @@ const defaultDetectors: Record<
   azure: [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
   gcp: gcpDetector,
 };
-
+azureAppServiceDetector.detect()
 export const resourceDetectors = (): (Detector | DetectorSync)[] => {
   // Get detectors from the environment variable
   const detectorsFromEnv =
