@@ -17,7 +17,7 @@ function readAgentConfig(configPath) {
       const lines = fileContent.split("\n");
 
       let apiKey = "";
-      let apiUrlForConfigCheck = "";
+      let target = "";
 
       for (const line of lines) {
         // Skip comments and empty lines
@@ -30,17 +30,17 @@ function readAgentConfig(configPath) {
           apiKey = line.split("api-key:")[1].trim();
         }
 
-        // Look for api-url-for-config-check
-        if (line.includes("api-url-for-config-check:")) {
-          apiUrlForConfigCheck = line
-            .split("api-url-for-config-check:")[1]
+        // Look for target
+        if (line.includes("target:")) {
+          target = line
+            .split("target:")[1]
             .trim();
         }
       }
 
       return {
         apiKey,
-        apiUrlForConfigCheck,
+        target,
       };
     } else {
       console.error(`Config file not found `);
@@ -74,7 +74,7 @@ async function trackPreInstall(config) {
   };
 
   const data = JSON.stringify(payload);
-  const baseUrl = new URL(config.apiUrlForConfigCheck);
+  const baseUrl = new URL(config.target);
   const pathSuffix = `${API_URI}/${config.apiKey}`;
   if (!baseUrl.pathname.endsWith('/')) {
     baseUrl.pathname += '/';
@@ -124,7 +124,7 @@ try {
     try {
       const config = readAgentConfig(configPath);
 
-      if (!config || !config.apiKey || !config.apiUrlForConfigCheck) {
+      if (!config || !config.apiKey || !config.target) {
         console.error("Invalid configuration: Missing API key or URL");
         return; // Return instead of throw
       }
