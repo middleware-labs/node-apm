@@ -17,7 +17,7 @@ export function parseBoolean(value: string | undefined): boolean | undefined {
 
 export function getPackageVersion(fallbackVersion: string = "0.0.0"): string {
   try {
-    const packageJsonPath = join(__dirname, "../package.json");
+    const packageJsonPath = join(__dirname, "../../package.json");
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
     return packageJson.version || fallbackVersion;
   } catch (error) {
