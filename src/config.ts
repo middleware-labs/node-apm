@@ -47,7 +47,7 @@ export let configDefault: Config = {
   DEBUG: false,
   host: "localhost",
   projectName: "Project-" + process.pid,
-  serviceName: "Service-" + process.pid,
+  serviceName: "nodejs-" + process.pid,
   port: {
     grpc: 9319,
     fluent: 8006,
