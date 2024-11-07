@@ -16,6 +16,13 @@ const errorsFormat = errors({ stack: true });
 let transformError = errorsFormat.transform;
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+import api from "@opentelemetry/api";
+
+const DEFAULT_LOG_KEYS = {
+  traceId: "trace_id",
+  spanId: "span_id",
+  traceFlags: "trace_flags",
+};
 
 let logPackageName;
 let logPackageVersion;
@@ -51,20 +58,50 @@ const log = (
     attributes["stack"] = stack && stack.stack ? stack.stack : "";
   }
   const logger = logs.getLogger(logPackageName, logPackageVersion);
+
+  let trace_id = null;
+  let span_id = null;
+  let trace_flags = null;
+  let current_span = api.trace.getSpan(api.context.active());
+  if (current_span) {
+    trace_id = current_span.spanContext().traceId;
+    span_id = current_span.spanContext().spanId;
+    trace_flags = current_span.spanContext().traceFlags;
+  }
+
   // @ts-ignore
   const severityNumber = SeverityNumber[level];
-  logger.emit({
-    severityNumber,
-    severityText: level,
-    body: message,
-    attributes: {
-      "mw.app.lang": "nodejs",
-      level: level.toLowerCase(),
-      ...(typeof attributes === "object" && Object.keys(attributes).length
-        ? attributes
-        : {}),
-    },
-  });
+
+  if (trace_id && span_id && trace_flags) {
+    logger.emit({
+      severityNumber,
+      severityText: level,
+      body: message,
+      attributes: {
+        "mw.app.lang": "nodejs",
+        level: level.toLowerCase(),
+        ...(typeof attributes === "object" && Object.keys(attributes).length
+          ? attributes
+          : {}),
+      },
+      [DEFAULT_LOG_KEYS.traceId]: trace_id,
+      [DEFAULT_LOG_KEYS.spanId]: span_id,
+      [DEFAULT_LOG_KEYS.traceFlags]: `0${trace_flags.toString(16)}`,
+    });
+  } else {
+    logger.emit({
+      severityNumber,
+      severityText: level,
+      body: message,
+      attributes: {
+        "mw.app.lang": "nodejs",
+        level: level.toLowerCase(),
+        ...(typeof attributes === "object" && Object.keys(attributes).length
+          ? attributes
+          : {}),
+      },
+    });
+  }
 };
 
 export const loggerInitializer = (config: Config): void => {
@@ -75,6 +112,7 @@ export const loggerInitializer = (config: Config): void => {
       ["project.name"]: config.projectName,
       ["mw.account_key"]: config.accessToken,
       ["mw_serverless"]: config.isServerless ? 1 : 0,
+      ["mw.sdk.version"]: config.sdkVersion,
       ...config.customResourceAttributes,
     }),
   });

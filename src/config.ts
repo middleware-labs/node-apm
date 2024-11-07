@@ -4,7 +4,7 @@ import { init as tracerInit } from "./tracer-collector";
 import { init as metricInit } from "./metrics-collector";
 import { loggerInitializer } from "./logger";
 import { ResourceAttributes } from "@opentelemetry/resources";
-import { parseBoolean, structuredLog } from "./utils";
+import { getPackageVersion, parseBoolean, structuredLog } from "./utils";
 
 export interface Config {
   pauseMetrics: Boolean | number;
@@ -31,6 +31,7 @@ export interface Config {
   disabledInstrumentations: string;
   consoleExporter: boolean;
   enableSelfInstrumentation: boolean;
+  sdkVersion?: string;
 }
 
 const WARNINGS = {
@@ -46,7 +47,7 @@ export let configDefault: Config = {
   DEBUG: false,
   host: "localhost",
   projectName: "Project-" + process.pid,
-  serviceName: "Service-" + process.pid,
+  serviceName: "nodejs-" + process.pid,
   port: {
     grpc: 9319,
     fluent: 8006,
@@ -115,7 +116,7 @@ export function computeOptions(config: Partial<Config> = {}) {
   config.enableSelfInstrumentation =
     parseBoolean(process.env.MW_SELF_INSTRUMENTATION) ??
     config.enableSelfInstrumentation;
-
+  config.sdkVersion = getPackageVersion();
   // Validate and warn
   if (!config.accessToken) {
     if (config.isServerless || config.enableProfiling) {

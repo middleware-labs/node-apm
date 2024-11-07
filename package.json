@@ -1,10 +1,12 @@
 {
   "name": "@middleware.io/node-apm",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Middleware exporter for NodeJS",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
   "scripts": {
+    "preinstall": "node scripts/preinstall.js",
+    "postinstall": "node scripts/postinstall.js",
     "build": "tsc --declaration",
     "watch": "tsc -w",
     "test": "jest",
@@ -39,14 +41,17 @@
     "@opentelemetry/sdk-trace-base": "^1.26.0",
     "@opentelemetry/sdk-trace-node": "^1.26.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@pyroscope/nodejs": "^0.2.6",
     "@types/logform": "^1.10.1",
     "@wdalmut/opentelemetry-plugin-mongoose": "^0.2.3",
+    "axios": "^1.7.7",
     "express": "^4.18.1",
     "logform": "^2.6.1",
     "node-fetch": "^2.6.0",
     "opentelemetry-node-metrics": "^3.0.0",
     "process": "^0.11.10"
+  },
+  "optionalDependencies": {
+    "@pyroscope/nodejs": "^0.2.6"
   },
   "repository": {
     "type": "git",
@@ -57,7 +62,8 @@
   },
   "files": [
     "lib",
-    "README.md"
+    "README.md",
+    "scripts"
   ],
   "homepage": "https://github.com/middleware-labs/node-apm-ts#readme",
   "devDependencies": {
