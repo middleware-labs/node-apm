@@ -1,6 +1,6 @@
 {
   "name": "@middleware.io/node-apm",
-  "version": "2.1.1",
+  "version": "2.1.2-rc.1",
   "description": "Middleware exporter for NodeJS",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -41,6 +41,7 @@
     "@opentelemetry/sdk-trace-base": "^1.26.0",
     "@opentelemetry/sdk-trace-node": "^1.26.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
+    "@pyroscope/nodejs": "^0.4.0",
     "@types/logform": "^1.10.1",
     "@wdalmut/opentelemetry-plugin-mongoose": "^0.2.3",
     "axios": "^1.7.7",
