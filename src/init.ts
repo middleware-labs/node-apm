@@ -13,6 +13,11 @@ import {
 } from "@opentelemetry/api";
 import { performHealthCheck } from "./healthcheck";
 import { shutdown } from "./tracer-collector";
+
+import { Express } from 'express';
+import errorHandler from './errorhandler';
+
+
 export const track = (newConfig: Partial<Config> | undefined = {}): void => {
   const config = configInit(newConfig);
   profilerInit(config).then((r) => {});
@@ -91,44 +96,8 @@ export const getTracer = (
   return otel.trace.getTracer(configDefault.serviceName);
 };
 
-// Function to capture global exceptions and associate with active spans
-function setupGlobalExceptionHandler() {
-  /**
- * Handles uncaught exceptions.
- */
-process.on("uncaughtException", (error: Error) => {
-  console.error("Uncaught Exception:", error);
-  recordException(error);
-  process.exit(1); // Exit process (optional)
-});
 
-/**
-* Handles unhandled promise rejections.
-*/
-process.on("unhandledRejection", (reason: unknown) => {
-  console.error("Unhandled Rejection:", reason);
-
-  if (reason instanceof Error) {
-      recordException(reason);
-  } else {
-      recordException(new Error(String(reason))); // Convert non-errors to error objects
-  }
-
-  process.exit(1); // Exit process (optional)
-});
+// Function to register the error handler
+export function registerErrorHandler(app: Express): void {
+  app.use(errorHandler);
 }
-
-function recordException(error: Error): void {
-  const span = trace.getSpan(context.active());
-  if (span) {
-      span.addEvent("exception", {
-          "exception.type": error.name,
-          "exception.message": error.message,
-          "exception.stacktrace": error.stack || "No stack trace available",
-      });
-      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-  }
-}
-
-// Enable global exception tracking
-setupGlobalExceptionHandler();
