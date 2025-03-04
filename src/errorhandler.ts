@@ -51,16 +51,16 @@ function customRecordException(span: Span, error: Error) {
         }
     });
 
-    const mwGitCommitSha = process.env.MW_GIT_COMMIT_SHA || "";
-    const mwGitRepositoryUrl = process.env.MW_GIT_REPOSITORY_URL || "";
+    const mwVCSCommitSha = process.env.MW_VCS_COMMIT_SHA || "";
+    const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL || "";
 
     // Add exception event to the span
     span.addEvent("exception", {
         "exception.type": error.name,
         "exception.message": error.message,
         "exception.stacktrace": error.stack || "",
-        "exception.github.commit_sha": mwGitCommitSha,
-        "exception.github.repository_url": mwGitRepositoryUrl,
+        "exception.vcs.commit_sha": mwVCSCommitSha,
+        "exception.vcs.repository_url": mwVCSRepositoryUrl,
         "exception.stack_details": JSON.stringify(stackInfo, null, 2),
     });
 
