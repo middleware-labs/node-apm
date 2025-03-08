@@ -35,19 +35,27 @@ function customRecordException(span: Span, error: Error) {
     const stackInfo: any[] = [];
 
     stackTrace.forEach((line) => {
-        const match = line.match(/\s*at\s+(.+?)\s+\((.*?):(\d+):(\d+)\)/);
+        let match = line.match(/\s*at\s+(?:(.+?)\s+\()?(.*?):(\d+):(\d+)\)?/);
         if (match) {
-            const [_, functionName, filePath, lineNumber] = match;
-            const functionDetails = extractFunctionCode(filePath, parseInt(lineNumber));
-
-            stackInfo.push({
-                "exception.file": filePath,
-                "exception.line": lineNumber,
-                "exception.function_name": functionName,
-                "exception.function_body": functionDetails.functionCode,
-                "exception.start_line": functionDetails.startLine,
-                "exception.end_line": functionDetails.endLine,
-            });
+            const [, functionName, filePath, lineNumber, columnNumber] = match;
+            
+            // Normalize filePath (resolve relative paths if necessary)
+            const resolvedPath = filePath.startsWith("/") ? filePath : require.resolve(filePath);
+    
+            if (fs.existsSync(resolvedPath)) {
+                const functionDetails = extractFunctionCode(resolvedPath, parseInt(lineNumber));
+    
+                stackInfo.push({
+                    "exception.file": resolvedPath,
+                    "exception.line": parseInt(lineNumber),
+                    "exception.column_number": parseInt(columnNumber),
+                    "exception.function_name": functionName || "anonymous",
+                    "exception.function_body": functionDetails.functionCode,
+                    "exception.start_line": functionDetails.startLine,
+                    "exception.end_line": functionDetails.endLine,
+                    "exception.is_file_internal": resolvedPath.includes("node_modules")
+                });
+            }
         }
     });
 
@@ -59,6 +67,7 @@ function customRecordException(span: Span, error: Error) {
         "exception.type": error.name,
         "exception.message": error.message,
         "exception.stacktrace": error.stack || "",
+        "exception.language": "nodejs",
         "exception.vcs.commit_sha": mwVCSCommitSha,
         "exception.vcs.repository_url": mwVCSRepositoryUrl,
         "exception.stack_details": JSON.stringify(stackInfo, null, 2),
