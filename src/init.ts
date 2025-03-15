@@ -1,4 +1,5 @@
 const otel = require("@opentelemetry/api");
+import { context, SpanStatusCode } from "@opentelemetry/api";
 import { log } from "./logger";
 import { init as configInit } from "./config";
 import { init as profilerInit } from "./profiler";
@@ -8,9 +9,15 @@ import {
   MeterOptions,
   TracerOptions,
   Tracer,
+  trace
 } from "@opentelemetry/api";
 import { performHealthCheck } from "./healthcheck";
 import { shutdown } from "./tracer-collector";
+
+import { Express } from 'express';
+import errorHandler from './errorhandler';
+
+
 export const track = (newConfig: Partial<Config> | undefined = {}): void => {
   const config = configInit(newConfig);
   profilerInit(config).then((r) => {});
@@ -88,3 +95,9 @@ export const getTracer = (
 ): Tracer => {
   return otel.trace.getTracer(configDefault.serviceName);
 };
+
+
+// Function to register the error handler
+export function registerErrorHandler(app: Express): void {
+  app.use(errorHandler);
+}
