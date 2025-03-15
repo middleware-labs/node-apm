@@ -53,7 +53,7 @@ function customRecordException(span: Span, error: Error) {
                     "exception.function_body": functionDetails.functionCode,
                     "exception.start_line": functionDetails.startLine,
                     "exception.end_line": functionDetails.endLine,
-                    "exception.is_file_internal": resolvedPath.includes("node_modules")
+                    "exception.is_file_external": resolvedPath.includes("node_modules")
                 });
             }
         }
