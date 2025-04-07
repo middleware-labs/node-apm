@@ -11,6 +11,7 @@ import {
 import setupNodeMetrics from "opentelemetry-node-metrics";
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+import { EventLoopUtilization, performance } from "perf_hooks";
 
 export const init = (config: Config): void => {
   let SERVICE_NAME = ATTR_SERVICE_NAME;
@@ -42,6 +43,8 @@ export const init = (config: Config): void => {
   const apmPauseMetrics = config.pauseMetrics && config.pauseMetrics === 1;
   if (!apmPauseMetrics) {
     setupNodeMetrics(meterProvider);
+    // Setup ELU monitoring if available
+    setupEventLoopUtilizationMonitoring(meterProvider);
   }
 };
 
@@ -53,4 +56,31 @@ function getMetricExporter(config: Config): PushMetricExporter {
     url: config.target,
     compression: CompressionAlgorithm.GZIP,
   });
+}
+
+/**
+ * Sets up monitoring for Event Loop Utilization when available.
+ * This creates an observable gauge to track how busy the Node.js event loop is.
+ *
+ * @param meterProvider The OpenTelemetry meter provider
+ */
+function setupEventLoopUtilizationMonitoring(meterProvider: MeterProvider) {
+
+  if (!("eventLoopUtilization" in performance)) {
+    return;
+  }
+  let elu: EventLoopUtilization;
+  const meter = meterProvider.getMeter("node-runtime-metrics");
+
+  meter
+    .createObservableGauge("runtime.node.event_loop.utilization", {
+      description: "Node.js event loop utilization (0-1)",
+    })
+    .addCallback((observable) => {
+      // If elu is undefined (first run), measurement is from start of process
+      elu = performance.eventLoopUtilization(elu);
+      if (elu?.utilization) {
+        observable.observe(elu.utilization);
+      }
+    });
 }
