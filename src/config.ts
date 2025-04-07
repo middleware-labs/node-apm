@@ -5,6 +5,7 @@ import { init as metricInit } from "./metrics-collector";
 import { loggerInitializer } from "./logger";
 import { ResourceAttributes } from "@opentelemetry/resources";
 import { getPackageVersion, parseBoolean, structuredLog } from "./utils";
+import { Options } from "./payloadOptions";
 
 export interface Config {
   pauseMetrics: Boolean | number;
@@ -32,6 +33,7 @@ export interface Config {
   consoleExporter: boolean;
   enableSelfInstrumentation: boolean;
   sdkVersion?: string;
+  payloadOptions?: Options;
 }
 
 const WARNINGS = {
@@ -40,6 +42,8 @@ const WARNINGS = {
   MISSING_SERVICE_NAME:
     "Missing service name. Specify either MW_SERVICE_NAME environment variable or serviceName in the options parameter.",
 };
+
+const DEFAULT_MAX_PAYLOAD_SIZE = 1024 * 100;
 
 let customResourceAttributes: ResourceAttributes = {};
 
@@ -68,6 +72,10 @@ export let configDefault: Config = {
   disabledInstrumentations: "",
   consoleExporter: false,
   enableSelfInstrumentation: false,
+  payloadOptions: {
+    maxPayloadSize: DEFAULT_MAX_PAYLOAD_SIZE, // 100kb;
+    payloadsEnabled: false,
+  },
 };
 
 export const init = (config: Partial<Config> = {}): Config => {
@@ -78,6 +86,14 @@ export const init = (config: Partial<Config> = {}): Config => {
     // @ts-ignore
     configDefault[key] = config[key] ?? configDefault[key];
   });
+
+  // Ensure payload size doesn't exceed the maximum limit
+  if (configDefault?.payloadOptions) {
+    configDefault.payloadOptions.maxPayloadSize = Math.min(
+      configDefault.payloadOptions.maxPayloadSize ?? DEFAULT_MAX_PAYLOAD_SIZE,
+      DEFAULT_MAX_PAYLOAD_SIZE
+    );
+  }
   computeOptions(configDefault);
 
   // IF USING MW AGENT

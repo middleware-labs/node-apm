@@ -16,6 +16,11 @@ import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-node";
+import {
+  configureHttpInstrumentation,
+  createHttpRequestHook,
+  createHttpResponseHook,
+} from "./instrumentations/http";
 
 let sdk: NodeSDK | null = null;
 
@@ -48,7 +53,7 @@ export const init = (config: Config) => {
         }),
       ],
     });
-    
+
     sdk.start();
   }
 };
@@ -80,6 +85,20 @@ function createInstrumentationConfig(config: Config): InstrumentationConfigMap {
         }
         return false;
       },
+    };
+  }
+
+  if (config?.payloadOptions?.payloadsEnabled) {
+    instrumentationConfig["@opentelemetry/instrumentation-http"] = {
+      ...(instrumentationConfig["@opentelemetry/instrumentation-http"] || {}),
+      requestHook: createHttpRequestHook({
+        payloadsEnabled: true,
+        maxPayloadSize: config.payloadOptions.maxPayloadSize, // Max Limit 100KB
+      }),
+      responseHook: createHttpResponseHook({
+        payloadsEnabled: true,
+        maxPayloadSize: config.payloadOptions.maxPayloadSize, // Max Limit 100KB 
+      }),
     };
   }
 
