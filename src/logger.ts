@@ -105,16 +105,30 @@ const log = (
 };
 
 export const loggerInitializer = (config: Config): void => {
+
+  const mwVCSCommitSha = process.env.MW_VCS_COMMIT_SHA;
+  const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL;
+
+  const resourceAttributes: Record<string, any> = {
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    ["mw_agent"]: true,
+    ["project.name"]: config.projectName,
+    ["mw.account_key"]: config.accessToken,
+    ["mw_serverless"]: config.isServerless ? 1 : 0,
+    ["mw.sdk.version"]: config.sdkVersion,
+    ...config.customResourceAttributes,
+  };
+
+  if (mwVCSCommitSha) {
+    resourceAttributes["vcs.commit_sha"] = mwVCSCommitSha;
+  }
+
+  if (mwVCSRepositoryUrl) {
+    resourceAttributes["vcs.repository_url"] = mwVCSRepositoryUrl;
+  }
+
   const loggerProvider = new LoggerProvider({
-    resource: new Resource({
-      [SERVICE_NAME]: config.serviceName,
-      ["mw_agent"]: true,
-      ["project.name"]: config.projectName,
-      ["mw.account_key"]: config.accessToken,
-      ["mw_serverless"]: config.isServerless ? 1 : 0,
-      ["mw.sdk.version"]: config.sdkVersion,
-      ...config.customResourceAttributes,
-    }),
+    resource: new Resource(resourceAttributes),
   });
 
   loggerProvider.addLogRecordProcessor(

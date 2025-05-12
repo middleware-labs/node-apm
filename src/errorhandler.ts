@@ -68,8 +68,6 @@ function customRecordException(span: Span, error: Error) {
         "exception.message": error.message,
         "exception.stacktrace": error.stack || "",
         "exception.language": "nodejs",
-        "exception.vcs.commit_sha": mwVCSCommitSha,
-        "exception.vcs.repository_url": mwVCSRepositoryUrl,
         "exception.stack_details": JSON.stringify(stackInfo, null, 2),
     });
 
