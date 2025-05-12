@@ -63,7 +63,7 @@ function customRecordException(span: Span, error: Error) {
     const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL || "";
 
     // Add exception event to the span
-    span.addEvent("exception-mw", {
+    span.addEvent("exception", {
         "exception.type": error.name,
         "exception.message": error.message,
         "exception.stacktrace": error.stack || "",
