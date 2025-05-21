@@ -16,16 +16,14 @@ import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-node";
+import { addVCSMetadata } from "./helper";
 
 let sdk: NodeSDK | null = null;
 
-export const init = (config: Config) => {
+export const init = async (config: Config) => {
   const apm_pause_traces = config.pauseTraces === true;
 
-  const mwVCSCommitSha = process.env.MW_VCS_COMMIT_SHA;
-  const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL;
-
-  const resourceAttributes: Record<string, any> = {
+  let resourceAttributes: Record<string, any> = {
     [ATTR_SERVICE_NAME]: config.serviceName,
     ["mw_agent"]: true,
     ["project.name"]: config.projectName,
@@ -35,13 +33,7 @@ export const init = (config: Config) => {
     ...config.customResourceAttributes,
   };
 
-  if (mwVCSCommitSha) {
-    resourceAttributes["vcs.commit_sha"] = mwVCSCommitSha;
-  }
-
-  if (mwVCSRepositoryUrl) {
-    resourceAttributes["vcs.repository_url"] = mwVCSRepositoryUrl;
-  }
+  await addVCSMetadata(resourceAttributes);
 
   if (!apm_pause_traces) {
     sdk = new NodeSDK({

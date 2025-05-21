@@ -12,8 +12,9 @@ import setupNodeMetrics from "opentelemetry-node-metrics";
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import { EventLoopUtilization, performance } from "perf_hooks";
+import { addVCSMetadata } from "./helper";
 
-export const init = (config: Config): void => {
+export const init = async (config: Config): Promise<void> => {
   let SERVICE_NAME = ATTR_SERVICE_NAME;
   const metricsExporter = getMetricExporter(config);
   const metricReader = new PeriodicExportingMetricReader({
@@ -26,10 +27,7 @@ export const init = (config: Config): void => {
     SERVICE_NAME = "service.name";
   }
 
-  const mwVCSCommitSha = process.env.MW_VCS_COMMIT_SHA;
-  const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL;
-
-  const resourceAttributes: Record<string, any> = {
+  let resourceAttributes: Record<string, any> = {
     [ATTR_SERVICE_NAME]: config.serviceName,
     ["mw_agent"]: true,
     ["project.name"]: config.projectName,
@@ -39,13 +37,7 @@ export const init = (config: Config): void => {
     ...config.customResourceAttributes,
   };
 
-  if (mwVCSCommitSha) {
-    resourceAttributes["vcs.commit_sha"] = mwVCSCommitSha;
-  }
-
-  if (mwVCSRepositoryUrl) {
-    resourceAttributes["vcs.repository_url"] = mwVCSRepositoryUrl;
-  }
+  await addVCSMetadata(resourceAttributes);
 
   const meterProvider = new MeterProvider({
     resource: new Resource(resourceAttributes),

@@ -1,6 +1,6 @@
 {
   "name": "@middleware.io/node-apm",
-  "version": "2.1.2-rc.2",
+  "version": "2.2.0",
   "description": "Middleware exporter for NodeJS",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -44,6 +44,7 @@
     "@types/logform": "^1.10.1",
     "@wdalmut/opentelemetry-plugin-mongoose": "^0.2.3",
     "axios": "^1.7.7",
+    "isomorphic-git": "^1.30.1",
     "logform": "^2.6.1",
     "node-fetch": "^2.6.0",
     "opentelemetry-node-metrics": "^3.0.0",

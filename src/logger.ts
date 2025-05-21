@@ -17,6 +17,7 @@ let transformError = errorsFormat.transform;
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import api from "@opentelemetry/api";
+import { addVCSMetadata } from "./helper";
 
 const DEFAULT_LOG_KEYS = {
   traceId: "trace_id",
@@ -104,12 +105,9 @@ const log = (
   }
 };
 
-export const loggerInitializer = (config: Config): void => {
+export const loggerInitializer = async (config: Config) => {
 
-  const mwVCSCommitSha = process.env.MW_VCS_COMMIT_SHA;
-  const mwVCSRepositoryUrl = process.env.MW_VCS_REPOSITORY_URL;
-
-  const resourceAttributes: Record<string, any> = {
+  let resourceAttributes: Record<string, any> = {
     [ATTR_SERVICE_NAME]: config.serviceName,
     ["mw_agent"]: true,
     ["project.name"]: config.projectName,
@@ -119,13 +117,7 @@ export const loggerInitializer = (config: Config): void => {
     ...config.customResourceAttributes,
   };
 
-  if (mwVCSCommitSha) {
-    resourceAttributes["vcs.commit_sha"] = mwVCSCommitSha;
-  }
-
-  if (mwVCSRepositoryUrl) {
-    resourceAttributes["vcs.repository_url"] = mwVCSRepositoryUrl;
-  }
+  await addVCSMetadata(resourceAttributes);
 
   const loggerProvider = new LoggerProvider({
     resource: new Resource(resourceAttributes),
