@@ -17,6 +17,7 @@ let transformError = errorsFormat.transform;
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import api from "@opentelemetry/api";
+import { addVCSMetadata } from "./helper";
 
 const DEFAULT_LOG_KEYS = {
   traceId: "trace_id",
@@ -104,17 +105,22 @@ const log = (
   }
 };
 
-export const loggerInitializer = (config: Config): void => {
+export const loggerInitializer = async (config: Config) => {
+
+  let resourceAttributes: Record<string, any> = {
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    ["mw_agent"]: true,
+    ["project.name"]: config.projectName,
+    ["mw.account_key"]: config.accessToken,
+    ["mw_serverless"]: config.isServerless ? 1 : 0,
+    ["mw.sdk.version"]: config.sdkVersion,
+    ...config.customResourceAttributes,
+  };
+
+  await addVCSMetadata(resourceAttributes);
+
   const loggerProvider = new LoggerProvider({
-    resource: new Resource({
-      [SERVICE_NAME]: config.serviceName,
-      ["mw_agent"]: true,
-      ["project.name"]: config.projectName,
-      ["mw.account_key"]: config.accessToken,
-      ["mw_serverless"]: config.isServerless ? 1 : 0,
-      ["mw.sdk.version"]: config.sdkVersion,
-      ...config.customResourceAttributes,
-    }),
+    resource: new Resource(resourceAttributes),
   });
 
   loggerProvider.addLogRecordProcessor(

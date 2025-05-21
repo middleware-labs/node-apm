@@ -12,8 +12,9 @@ import setupNodeMetrics from "opentelemetry-node-metrics";
 import { Config } from "./config";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import { EventLoopUtilization, performance } from "perf_hooks";
+import { addVCSMetadata } from "./helper";
 
-export const init = (config: Config): void => {
+export const init = async (config: Config): Promise<void> => {
   let SERVICE_NAME = ATTR_SERVICE_NAME;
   const metricsExporter = getMetricExporter(config);
   const metricReader = new PeriodicExportingMetricReader({
@@ -25,18 +26,21 @@ export const init = (config: Config): void => {
   if (SERVICE_NAME === undefined) {
     SERVICE_NAME = "service.name";
   }
+
+  let resourceAttributes: Record<string, any> = {
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    ["mw_agent"]: true,
+    ["project.name"]: config.projectName,
+    ["mw.account_key"]: config.accessToken,
+    ["mw_serverless"]: config.isServerless ? 1 : 0,
+    ["mw.sdk.version"]: config.sdkVersion,
+    ...config.customResourceAttributes,
+  };
+
+  await addVCSMetadata(resourceAttributes);
+
   const meterProvider = new MeterProvider({
-    resource: new Resource({
-      [ATTR_SERVICE_NAME]: serviceName,
-      ["mw_agent"]: true,
-      ["project.name"]: projectName,
-      ["mw.account_key"]: config.accessToken,
-      ["runtime.metrics.nodejs"]: true,
-      ["mw.app.lang"]: "nodejs",
-      ["mw_serverless"]: config.isServerless ? 1 : 0,
-      ["mw.sdk.version"]: config.sdkVersion,
-      ...config.customResourceAttributes,
-    }),
+    resource: new Resource(resourceAttributes),
     readers: [metricReader],
   });
   config.meterProvider = meterProvider;

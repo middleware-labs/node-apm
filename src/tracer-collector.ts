@@ -16,11 +16,24 @@ import {
   ConsoleSpanExporter,
   SpanExporter,
 } from "@opentelemetry/sdk-trace-node";
+import { addVCSMetadata } from "./helper";
 
 let sdk: NodeSDK | null = null;
 
-export const init = (config: Config) => {
+export const init = async (config: Config) => {
   const apm_pause_traces = config.pauseTraces === true;
+
+  let resourceAttributes: Record<string, any> = {
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    ["mw_agent"]: true,
+    ["project.name"]: config.projectName,
+    ["mw.account_key"]: config.accessToken,
+    ["mw_serverless"]: config.isServerless ? 1 : 0,
+    ["mw.sdk.version"]: config.sdkVersion,
+    ...config.customResourceAttributes,
+  };
+
+  await addVCSMetadata(resourceAttributes);
 
   if (!apm_pause_traces) {
     sdk = new NodeSDK({
@@ -31,15 +44,7 @@ export const init = (config: Config) => {
         ],
       }),
       resourceDetectors: resourceDetectors(),
-      resource: new Resource({
-        [ATTR_SERVICE_NAME]: config.serviceName,
-        ["mw_agent"]: true,
-        ["project.name"]: config.projectName,
-        ["mw.account_key"]: config.accessToken,
-        ["mw_serverless"]: config.isServerless ? 1 : 0,
-        ["mw.sdk.version"]: config.sdkVersion,
-        ...config.customResourceAttributes,
-      }),
+      resource: new Resource(resourceAttributes),
       traceExporter: getTraceExporter(config),
       instrumentations: [
         getNodeAutoInstrumentations(createInstrumentationConfig(config)),
