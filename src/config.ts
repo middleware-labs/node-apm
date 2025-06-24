@@ -32,6 +32,16 @@ export interface Config {
   consoleExporter: boolean;
   enableSelfInstrumentation: boolean;
   sdkVersion?: string;
+  excludeHttpTraces?: {
+    incoming?: {
+      urls?: string[];
+      methods?: string[];
+    };
+    outgoing?: {
+      urls?: string[];
+      methods?: string[];
+    };
+  };
 }
 
 const WARNINGS = {
@@ -68,6 +78,16 @@ export let configDefault: Config = {
   disabledInstrumentations: "",
   consoleExporter: false,
   enableSelfInstrumentation: false,
+  excludeHttpTraces: {
+    incoming: {
+      urls: [],
+      methods: []
+    },
+    outgoing: {
+      urls: [],
+      methods: []
+    }
+  }
 };
 
 export const init = (config: Partial<Config> = {}): Config => {
@@ -116,6 +136,43 @@ export function computeOptions(config: Partial<Config> = {}) {
   config.enableSelfInstrumentation =
     parseBoolean(process.env.MW_SELF_INSTRUMENTATION) ??
     config.enableSelfInstrumentation;
+  
+  // Handle HTTP trace exclusions with environment variable precedence
+  const incomingExcludedMethods = process.env.MW_EXCLUDE_INCOMING_HTTP_METHODS;
+  const incomingExcludedUrls = process.env.MW_EXCLUDE_INCOMING_HTTP_URLS;
+  const outgoingExcludedMethods = process.env.MW_EXCLUDE_OUTGOING_HTTP_METHODS;
+  const outgoingExcludedUrls = process.env.MW_EXCLUDE_OUTGOING_HTTP_URLS;
+  
+  // Initialize excludeHttpTraces if not present
+  if (!config.excludeHttpTraces) {
+    config.excludeHttpTraces = { incoming: {}, outgoing: {} };
+  }
+  
+  // Ensure incoming and outgoing objects exist
+  if (!config.excludeHttpTraces.incoming) {
+    config.excludeHttpTraces.incoming = {};
+  }
+  if (!config.excludeHttpTraces.outgoing) {
+    config.excludeHttpTraces.outgoing = {};
+  }
+  
+  // Apply environment variables with precedence (env overrides programmatic config)
+  config.excludeHttpTraces.incoming.methods = incomingExcludedMethods 
+    ? incomingExcludedMethods.split(",").map(m => m.trim().toUpperCase()).filter(Boolean)
+    : config.excludeHttpTraces.incoming.methods ?? [];
+    
+  config.excludeHttpTraces.incoming.urls = incomingExcludedUrls
+    ? incomingExcludedUrls.split(",").map(u => u.trim()).filter(Boolean)
+    : config.excludeHttpTraces.incoming.urls ?? [];
+    
+  config.excludeHttpTraces.outgoing.methods = outgoingExcludedMethods
+    ? outgoingExcludedMethods.split(",").map(m => m.trim().toUpperCase()).filter(Boolean)
+    : config.excludeHttpTraces.outgoing.methods ?? [];
+    
+  config.excludeHttpTraces.outgoing.urls = outgoingExcludedUrls
+    ? outgoingExcludedUrls.split(",").map(u => u.trim()).filter(Boolean)
+    : config.excludeHttpTraces.outgoing.urls ?? [];
+  
   config.sdkVersion = getPackageVersion();
   // Validate and warn
   if (!config.accessToken) {

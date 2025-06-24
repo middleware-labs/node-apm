@@ -20,6 +20,13 @@ import { addVCSMetadata } from "./helper";
 
 let sdk: NodeSDK | null = null;
 
+// Debug logging wrapper function
+const debugLog = (config: Config, message: string) => {
+  if (config.DEBUG) {
+    console.log(message);
+  }
+};
+
 export const init = async (config: Config) => {
   const apm_pause_traces = config.pauseTraces === true;
 
@@ -77,11 +84,70 @@ function createInstrumentationConfig(config: Config): InstrumentationConfigMap {
   });
 
   // By Default Ignoring Pyroscope Instrumented spans
+  let pyroscopeIgnoreHook: ((request: any) => boolean) | undefined;
   if (!config.enableSelfInstrumentation) {
+    debugLog(config, "[node-apm] Pyroscope self-instrumentation is disabled");
+    pyroscopeIgnoreHook = (request): boolean => {
+      if (request?.path && request.path.includes("/profiling/ingest")) return true;
+      return false;
+    };
+  }
+
+  // Get configuration for incoming and outgoing request exclusions
+  const excludeConfig = config.excludeHttpTraces;
+  const incomingConfig = excludeConfig?.incoming || {};
+  const outgoingConfig = excludeConfig?.outgoing || {};
+  
+  const incomingExcludedMethods = incomingConfig.methods || [];
+  const incomingExcludedUrls = incomingConfig.urls || [];
+  const outgoingExcludedMethods = outgoingConfig.methods || [];
+  const outgoingExcludedUrls = outgoingConfig.urls || [];
+
+  debugLog(config, `[node-apm] Incoming excluded HTTP methods: ${incomingExcludedMethods}`);
+  debugLog(config, `[node-apm] Incoming excluded HTTP URLs: ${incomingExcludedUrls}`);
+  debugLog(config, `[node-apm] Outgoing excluded HTTP methods: ${outgoingExcludedMethods}`);
+  debugLog(config, `[node-apm] Outgoing excluded HTTP URLs: ${outgoingExcludedUrls}`);
+
+  // Apply exclusion rules if any are configured
+  const hasExclusions = incomingExcludedMethods.length > 0 || incomingExcludedUrls.length > 0 ||
+                        outgoingExcludedMethods.length > 0 || outgoingExcludedUrls.length > 0;
+
+  // Set up HTTP instrumentation if we have exclusions OR need to apply pyroscope hook
+  if (hasExclusions || pyroscopeIgnoreHook) {
     instrumentationConfig["@opentelemetry/instrumentation-http"] = {
       ignoreOutgoingRequestHook: (request): boolean => {
-        if (request?.path) {
-          return request.path.includes("/profiling/ingest");
+        // Exclude by URL
+        debugLog(config, `[node-apm] Checking outgoing request: ${request?.path}`);
+        if (request?.path && outgoingExcludedUrls.length > 0 && outgoingExcludedUrls.some((url) => request.path && request.path.includes(url))) {
+          debugLog(config, `[node-apm] Dropping span for excluded outgoing URL: ${request.path}`);
+          return true;
+        }
+        // Exclude by method
+        if (request?.method && outgoingExcludedMethods.length > 0) {
+          if (outgoingExcludedMethods.includes(request.method.toUpperCase())) {
+            debugLog(config, `[node-apm] Dropping span for excluded outgoing HTTP method: ${request.method} ${request.path || ''}`);
+            return true;
+          }
+        }
+        // Calling pyroscope   ignore hook
+        if (typeof pyroscopeIgnoreHook === 'function') {
+          return pyroscopeIgnoreHook(request);
+        }
+        return false;
+      },
+      ignoreIncomingRequestHook: (request): boolean => {
+        // Exclude by URL
+        debugLog(config, `[node-apm] Checking incoming request: ${request?.url}`);
+        if (request?.url && incomingExcludedUrls.length > 0 && incomingExcludedUrls.some((url) => request.url && request.url.includes(url))) {
+          debugLog(config, `[node-apm] Dropping span for excluded incoming URL: ${request.url}`);
+          return true;
+        }
+        // Exclude by method
+        if (request?.method && incomingExcludedMethods.length > 0) {
+          if (incomingExcludedMethods.includes(request.method.toUpperCase())) {
+            debugLog(config, `[node-apm] Dropping span for excluded incoming HTTP method: ${request.method} ${request.url || ''}`);
+            return true;
+          }
         }
         return false;
       },
