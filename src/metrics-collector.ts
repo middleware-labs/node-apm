@@ -14,7 +14,7 @@ import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
 import { EventLoopUtilization, performance } from "perf_hooks";
 import { addVCSMetadata } from "./helper";
 
-export const init = async (config: Config): Promise<void> => {
+export const init = (config: Config): void => {
   let SERVICE_NAME = ATTR_SERVICE_NAME;
   const metricsExporter = getMetricExporter(config);
   const metricReader = new PeriodicExportingMetricReader({
@@ -37,7 +37,7 @@ export const init = async (config: Config): Promise<void> => {
     ...config.customResourceAttributes,
   };
 
-  await addVCSMetadata(resourceAttributes);
+  addVCSMetadata(resourceAttributes);
 
   const meterProvider = new MeterProvider({
     resource: new Resource(resourceAttributes),
@@ -69,7 +69,6 @@ function getMetricExporter(config: Config): PushMetricExporter {
  * @param meterProvider The OpenTelemetry meter provider
  */
 function setupEventLoopUtilizationMonitoring(meterProvider: MeterProvider) {
-
   if (!("eventLoopUtilization" in performance)) {
     return;
   }

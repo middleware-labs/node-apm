@@ -105,7 +105,7 @@ const log = (
   }
 };
 
-export const loggerInitializer = async (config: Config) => {
+export const loggerInitializer =  (config: Config) => {
 
   let resourceAttributes: Record<string, any> = {
     [ATTR_SERVICE_NAME]: config.serviceName,
@@ -117,7 +117,7 @@ export const loggerInitializer = async (config: Config) => {
     ...config.customResourceAttributes,
   };
 
-  await addVCSMetadata(resourceAttributes);
+  addVCSMetadata(resourceAttributes);
 
   const loggerProvider = new LoggerProvider({
     resource: new Resource(resourceAttributes),
