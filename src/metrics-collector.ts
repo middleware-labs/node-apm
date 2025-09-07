@@ -34,6 +34,8 @@ export const init = (config: Config): void => {
     ["mw.account_key"]: config.accessToken,
     ["mw_serverless"]: config.isServerless ? 1 : 0,
     ["mw.sdk.version"]: config.sdkVersion,
+    ["runtime.metrics.nodejs"]: true,
+    ["mw.app.lang"]: "nodejs",
     ...config.customResourceAttributes,
   };
 
@@ -44,7 +46,7 @@ export const init = (config: Config): void => {
     readers: [metricReader],
   });
   config.meterProvider = meterProvider;
-  const apmPauseMetrics = config.pauseMetrics && config.pauseMetrics === 1;
+  const apmPauseMetrics = config.pauseMetrics || config.pauseMetrics === 1;
   if (!apmPauseMetrics) {
     setupNodeMetrics(meterProvider);
     // Setup ELU monitoring if available
