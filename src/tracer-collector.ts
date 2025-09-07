@@ -5,7 +5,7 @@ import {
 } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-grpc";
 import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
-import { GrpcInstrumentation } from "@opentelemetry/instrumentation-grpc";
+// import { GrpcInstrumentation } from "@opentelemetry/instrumentation-grpc";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { CompositePropagator } from "@opentelemetry/core";
 import { B3Propagator, B3InjectEncoding } from "@opentelemetry/propagator-b3";
@@ -55,9 +55,9 @@ export const init = (config: Config) => {
       traceExporter: getTraceExporter(config),
       instrumentations: [
         getNodeAutoInstrumentations(createInstrumentationConfig(config)),
-        new GrpcInstrumentation({
-          ignoreGrpcMethods: ["Export"],
-        }),
+        // new GrpcInstrumentation({
+        //   ignoreGrpcMethods: ["Export"],
+        // }),
       ],
     });
 
@@ -71,9 +71,28 @@ function createInstrumentationConfig(config: Config): InstrumentationConfigMap {
   instrumentationConfig["@opentelemetry/instrumentation-fs"] = {
     enabled: false,
   };
+
+  instrumentationConfig["@opentelemetry/instrumentation-graphql"] = {
+    mergeItems: true,
+  };
+
   const instrumentations: { [key: string]: keyof InstrumentationConfigMap } = {
     dns: "@opentelemetry/instrumentation-dns",
     net: "@opentelemetry/instrumentation-net",
+    socket: "@opentelemetry/instrumentation-socket.io",
+    ioredis: "@opentelemetry/instrumentation-ioredis",
+    pg: "@opentelemetry/instrumentation-pg",
+    express: "@opentelemetry/instrumentation-express",
+    fastify: "@opentelemetry/instrumentation-fastify",
+    pino: "@opentelemetry/instrumentation-pino",
+    mongodb: "@opentelemetry/instrumentation-mongodb",
+    mongoose: "@opentelemetry/instrumentation-mongoose",
+    grpc: "@opentelemetry/instrumentation-grpc",
+    redis: "@opentelemetry/instrumentation-redis",
+    "redis-client": "@opentelemetry/instrumentation-redis-4",
+    knex: "@opentelemetry/instrumentation-knex",
+    "generic-pool": "@opentelemetry/instrumentation-generic-pool",
+    "aws-sdk": "@opentelemetry/instrumentation-aws-sdk",
   };
 
   config.disabledInstrumentations.split(",").forEach((item) => {
