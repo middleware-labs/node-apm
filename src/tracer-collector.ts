@@ -102,6 +102,12 @@ function createInstrumentationConfig(config: Config): InstrumentationConfigMap {
     }
   });
 
+  if (!config.disabledInstrumentations.includes("grpc")) {
+    instrumentationConfig["@opentelemetry/instrumentation-grpc"] = {
+      ignoreGrpcMethods: ["Export"],
+    };
+  }
+
   // By Default Ignoring Pyroscope Instrumented spans
   let pyroscopeIgnoreHook: ((request: any) => boolean) | undefined;
   if (!config.enableSelfInstrumentation) {
