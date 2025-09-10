@@ -6,6 +6,34 @@ import { loggerInitializer } from "./logger";
 import { ResourceAttributes } from "@opentelemetry/resources";
 import { getPackageVersion, parseBoolean, structuredLog } from "./utils";
 
+export interface GraphQLInstrumentationConfig {
+  allowValues?: boolean;
+  depth?: number;
+  ignoreResolveSpans?: boolean;
+  ignoreTrivialResolveSpans?: boolean;
+  mergeItems?: boolean;
+}
+
+export interface InstrumentationConfig {
+  graphql?: GraphQLInstrumentationConfig;
+  express?: ExpressInstrumentationConfig;
+}
+
+export enum ExpressLayerType {
+  ROUTER = "router",
+  MIDDLEWARE = "middleware",
+  REQUEST_HANDLER = "request_handler",
+}
+
+export type LayerPathSegment = string | RegExp | number;
+
+export type IgnoreMatcher = string | RegExp | ((name: string) => boolean);
+
+export interface ExpressInstrumentationConfig {
+  ignoreLayers?: IgnoreMatcher[];
+  ignoreLayersType?: ExpressLayerType[];
+}
+
 export interface Config {
   pauseMetrics: Boolean | number;
   pauseTraces: Boolean | number;
@@ -42,6 +70,7 @@ export interface Config {
       methods?: string[];
     };
   };
+  instrumentations?: InstrumentationConfig;
 }
 
 const WARNINGS = {
@@ -52,6 +81,19 @@ const WARNINGS = {
 };
 
 let customResourceAttributes: ResourceAttributes = {};
+
+const defaultGraphQLConfig: GraphQLInstrumentationConfig = {
+  allowValues: false,
+  depth: 3,
+  ignoreResolveSpans: false,
+  ignoreTrivialResolveSpans: false,
+  mergeItems: true,
+};
+
+const defaultExpressConfig: ExpressInstrumentationConfig = {
+  ignoreLayers: [],
+  ignoreLayersType: [],
+};
 
 export let configDefault: Config = {
   DEBUG: false,
@@ -78,16 +120,20 @@ export let configDefault: Config = {
   disabledInstrumentations: "",
   consoleExporter: false,
   enableSelfInstrumentation: false,
+  instrumentations: {
+    graphql: { ...defaultGraphQLConfig },
+    express: { ...defaultExpressConfig },
+  },
   excludeHttpTraces: {
     incoming: {
       urls: [],
-      methods: []
+      methods: [],
     },
     outgoing: {
       urls: [],
-      methods: []
-    }
-  }
+      methods: [],
+    },
+  },
 };
 
 export const init = (config: Partial<Config> = {}): Config => {
@@ -136,18 +182,40 @@ export function computeOptions(config: Partial<Config> = {}) {
   config.enableSelfInstrumentation =
     parseBoolean(process.env.MW_SELF_INSTRUMENTATION) ??
     config.enableSelfInstrumentation;
-  
+
   // Handle HTTP trace exclusions with environment variable precedence
   const incomingExcludedMethods = process.env.MW_EXCLUDE_INCOMING_HTTP_METHODS;
   const incomingExcludedUrls = process.env.MW_EXCLUDE_INCOMING_HTTP_URLS;
   const outgoingExcludedMethods = process.env.MW_EXCLUDE_OUTGOING_HTTP_METHODS;
   const outgoingExcludedUrls = process.env.MW_EXCLUDE_OUTGOING_HTTP_URLS;
-  
+
   // Initialize excludeHttpTraces if not present
   if (!config.excludeHttpTraces) {
     config.excludeHttpTraces = { incoming: {}, outgoing: {} };
   }
-  
+
+  if (!config.instrumentations) {
+    config.instrumentations = {};
+  }
+
+  if (!config.instrumentations.graphql) {
+    config.instrumentations.graphql = { ...defaultGraphQLConfig };
+  } else {
+    config.instrumentations.graphql = {
+      ...defaultGraphQLConfig,
+      ...config.instrumentations.graphql,
+    };
+  }
+
+  if (!config.instrumentations.express) {
+    config.instrumentations.express = { ...defaultExpressConfig };
+  } else {
+    config.instrumentations.express = {
+      ...defaultExpressConfig,
+      ...config.instrumentations.express
+    };
+  }
+
   // Ensure incoming and outgoing objects exist
   if (!config.excludeHttpTraces.incoming) {
     config.excludeHttpTraces.incoming = {};
@@ -155,24 +223,36 @@ export function computeOptions(config: Partial<Config> = {}) {
   if (!config.excludeHttpTraces.outgoing) {
     config.excludeHttpTraces.outgoing = {};
   }
-  
+
   // Apply environment variables with precedence (env overrides programmatic config)
-  config.excludeHttpTraces.incoming.methods = incomingExcludedMethods 
-    ? incomingExcludedMethods.split(",").map(m => m.trim().toUpperCase()).filter(Boolean)
+  config.excludeHttpTraces.incoming.methods = incomingExcludedMethods
+    ? incomingExcludedMethods
+        .split(",")
+        .map((m) => m.trim().toUpperCase())
+        .filter(Boolean)
     : config.excludeHttpTraces.incoming.methods ?? [];
-    
+
   config.excludeHttpTraces.incoming.urls = incomingExcludedUrls
-    ? incomingExcludedUrls.split(",").map(u => u.trim()).filter(Boolean)
+    ? incomingExcludedUrls
+        .split(",")
+        .map((u) => u.trim())
+        .filter(Boolean)
     : config.excludeHttpTraces.incoming.urls ?? [];
-    
+
   config.excludeHttpTraces.outgoing.methods = outgoingExcludedMethods
-    ? outgoingExcludedMethods.split(",").map(m => m.trim().toUpperCase()).filter(Boolean)
+    ? outgoingExcludedMethods
+        .split(",")
+        .map((m) => m.trim().toUpperCase())
+        .filter(Boolean)
     : config.excludeHttpTraces.outgoing.methods ?? [];
-    
+
   config.excludeHttpTraces.outgoing.urls = outgoingExcludedUrls
-    ? outgoingExcludedUrls.split(",").map(u => u.trim()).filter(Boolean)
+    ? outgoingExcludedUrls
+        .split(",")
+        .map((u) => u.trim())
+        .filter(Boolean)
     : config.excludeHttpTraces.outgoing.urls ?? [];
-  
+
   config.sdkVersion = getPackageVersion();
   // Validate and warn
   if (!config.accessToken) {

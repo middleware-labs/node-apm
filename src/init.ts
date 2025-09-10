@@ -9,14 +9,13 @@ import {
   MeterOptions,
   TracerOptions,
   Tracer,
-  trace
+  trace,
 } from "@opentelemetry/api";
 import { performHealthCheck } from "./healthcheck";
 import { shutdown } from "./tracer-collector";
-
-import { Express } from 'express';
-import errorHandler from './errorhandler';
-
+import { ExpressLayerType } from "./config";
+import { Express } from "express";
+import errorHandler from "./errorhandler";
 
 export const track = (newConfig: Partial<Config> | undefined = {}): void => {
   const config = configInit(newConfig);
@@ -96,8 +95,9 @@ export const getTracer = (
   return otel.trace.getTracer(configDefault.serviceName);
 };
 
-
 // Function to register the error handler
 export function registerErrorHandler(app: Express): void {
   app.use(errorHandler);
 }
+
+export { ExpressLayerType };

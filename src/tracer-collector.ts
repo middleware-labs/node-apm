@@ -73,7 +73,11 @@ function createInstrumentationConfig(config: Config): InstrumentationConfigMap {
   };
 
   instrumentationConfig["@opentelemetry/instrumentation-graphql"] = {
-    mergeItems: true,
+    ...config.instrumentations?.graphql,
+  };
+
+  instrumentationConfig["@opentelemetry/instrumentation-express"] = {
+    ...config.instrumentations?.express,
   };
 
   const instrumentations: { [key: string]: keyof InstrumentationConfigMap } = {
