@@ -136,6 +136,8 @@ export function computeOptions(config: Partial<Config> = {}) {
   config.enableSelfInstrumentation =
     parseBoolean(process.env.MW_SELF_INSTRUMENTATION) ??
     config.enableSelfInstrumentation;
+  config.enableProfiling =
+    parseBoolean(process.env.MW_PROFILING_ENABLED) ?? config.enableProfiling;
   
   // Handle HTTP trace exclusions with environment variable precedence
   const incomingExcludedMethods = process.env.MW_EXCLUDE_INCOMING_HTTP_METHODS;
