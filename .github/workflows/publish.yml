@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - master
+      - release-workflow
 jobs:
   release:
     name: release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases
+      packages: write
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -19,8 +23,20 @@ jobs:
       - name: install dependencies
         run: npm install
       - name: build
-        run: npm run build  # Assuming you have a "build" script defined in your package.json
-      - name: publish
-        run: npm publish --access public
+        run: npm run build # Assuming you have a "build" script defined in your package.json
+      - name: Get package version
+        id: package_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      # - name: publish
+      #   run: npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.package_version.outputs.VERSION }}
+          name: v${{ steps.package_version.outputs.VERSION }}
+          generate_release_notes: true
+          make_latest: true
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+          GITHUB_TOKEN: ${{ github.token }}
