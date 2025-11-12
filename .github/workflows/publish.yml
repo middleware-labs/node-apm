@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - release-workflow
 jobs:
   release:
     name: release
@@ -27,16 +26,15 @@ jobs:
       - name: Get package version
         id: package_version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-      # - name: publish
-      #   run: npm publish --access public
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.package_version.outputs.VERSION }}
           name: v${{ steps.package_version.outputs.VERSION }}
           generate_release_notes: true
-          make_latest: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
