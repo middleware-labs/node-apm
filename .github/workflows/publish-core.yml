@@ -1,0 +1,55 @@
+name: npm-publish-core
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g. 2.4.2-dev.1)'
+        required: true
+      tag:
+        description: 'npm dist-tag'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - beta
+          - latest
+    #push:
+    #branches:
+    #  - master
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - name: Use core package.json
+        run: cp package-core.json package.json
+      - name: Set package version
+        run: npm version ${{ github.event.inputs.version }} --no-git-tag-version
+      - name: install dependencies
+        run: npm install
+      - name: build
+        run: npm run build
+      - name: publish
+        run: npm publish --access public --tag ${{ github.event.inputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: Create GitHub Release
+        if: ${{ github.event.inputs.tag == 'latest' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: v${{ github.event.inputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
