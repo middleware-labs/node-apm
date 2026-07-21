@@ -13,11 +13,11 @@ jobs:
       packages: write
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
       - name: install dependencies
         run: npm install
@@ -31,7 +31,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package_version.outputs.VERSION }}
           name: v${{ steps.package_version.outputs.VERSION }}
