@@ -1,6 +1,6 @@
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   ConsoleMetricExporter,
   MeterProvider,
@@ -42,7 +42,7 @@ export const init = (config: Config): void => {
   addVCSMetadata(resourceAttributes);
 
   const meterProvider = new MeterProvider({
-    resource: new Resource(resourceAttributes),
+    resource: resourceFromAttributes(resourceAttributes),
     readers: [metricReader],
   });
   config.meterProvider = meterProvider;
