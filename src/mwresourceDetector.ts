@@ -1,18 +1,17 @@
 import {
-  Detector,
-  DetectorSync,
-  envDetectorSync,
-  hostDetectorSync,
-  osDetectorSync,
-  processDetectorSync,
-  serviceInstanceIdDetectorSync,
+  ResourceDetector,
+  envDetector,
+  hostDetector,
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
 } from "@opentelemetry/resources";
 import {
-  awsBeanstalkDetectorSync,
-  awsEcsDetectorSync,
-  awsEksDetectorSync,
-  awsEc2DetectorSync,
-  awsLambdaDetectorSync,
+  awsBeanstalkDetector,
+  awsEcsDetector,
+  awsEksDetector,
+  awsEc2Detector,
+  awsLambdaDetector,
 } from "@opentelemetry/resource-detector-aws";
 import {
   azureAppServiceDetector,
@@ -22,28 +21,25 @@ import {
 import { gcpDetector } from "@opentelemetry/resource-detector-gcp";
 import { containerDetector } from "@opentelemetry/resource-detector-container";
 
-const defaultDetectors: Record<
-  string,
-  DetectorSync | DetectorSync[] | Detector | Detector[]
-> = {
-  env: envDetectorSync,
-  process: processDetectorSync,
-  serviceinstance: serviceInstanceIdDetectorSync,
-  os: osDetectorSync,
-  host: hostDetectorSync,
+const defaultDetectors: Record<string, ResourceDetector | ResourceDetector[]> = {
+  env: envDetector,
+  process: processDetector,
+  serviceinstance: serviceInstanceIdDetector,
+  os: osDetector,
+  host: hostDetector,
   container: containerDetector,
   aws: [
-    awsBeanstalkDetectorSync,
-    awsEc2DetectorSync,
-    awsEcsDetectorSync,
-    awsEksDetectorSync,
-    awsLambdaDetectorSync,
+    awsBeanstalkDetector,
+    awsEc2Detector,
+    awsEcsDetector,
+    awsEksDetector,
+    awsLambdaDetector,
   ],
   azure: [azureAppServiceDetector, azureFunctionsDetector, azureVmDetector],
   gcp: gcpDetector,
 };
 
-export const resourceDetectors = (): (Detector | DetectorSync)[] => {
+export const resourceDetectors = (): ResourceDetector[] => {
   // Get detectors from the environment variable
   const detectorsFromEnv =
     process.env.OTEL_NODE_RESOURCE_DETECTORS || "default";
@@ -53,12 +49,12 @@ export const resourceDetectors = (): (Detector | DetectorSync)[] => {
 
   if (detectorKeys.includes("default")) {
     return [
-      envDetectorSync,
-      processDetectorSync,
-      osDetectorSync,
+      envDetector,
+      processDetector,
+      osDetector,
       containerDetector,
-      serviceInstanceIdDetectorSync,
-      hostDetectorSync
+      serviceInstanceIdDetector,
+      hostDetector
     ];
   }
 
@@ -70,7 +66,7 @@ export const resourceDetectors = (): (Detector | DetectorSync)[] => {
   }
 
   // Filter detectors based on the provided keys in the environment variable
-  const resolvedDetectors: (Detector | DetectorSync)[] = [];
+  const resolvedDetectors: ResourceDetector[] = [];
   for (const key of detectorKeys) {
     const detector = defaultDetectors[key];
     if (detector) {
