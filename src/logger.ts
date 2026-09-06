@@ -6,7 +6,7 @@ import {
   LoggerProvider,
   LogRecordExporter,
 } from "@opentelemetry/sdk-logs";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import fs from "fs";
 import path from "path";
@@ -119,13 +119,13 @@ export const loggerInitializer =  (config: Config) => {
 
   addVCSMetadata(resourceAttributes);
 
+  // sdk-logs 2.x removed addLogRecordProcessor; processors are constructor-only.
   const loggerProvider = new LoggerProvider({
-    resource: new Resource(resourceAttributes),
+    resource: resourceFromAttributes(resourceAttributes),
+    processors: [
+      new BatchLogRecordProcessor({ exporter: getLogsExporter(config) }),
+    ],
   });
-
-  loggerProvider.addLogRecordProcessor(
-    new BatchLogRecordProcessor(getLogsExporter(config))
-  );
 
   logs.setGlobalLoggerProvider(loggerProvider);
 

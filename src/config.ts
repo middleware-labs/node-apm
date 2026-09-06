@@ -3,7 +3,7 @@ import process from "process";
 import { init as tracerInit } from "./tracer-collector";
 import { init as metricInit } from "./metrics-collector";
 import { loggerInitializer } from "./logger";
-import { ResourceAttributes } from "@opentelemetry/resources";
+import { Attributes } from "@opentelemetry/api";
 import { getPackageVersion, parseBoolean, structuredLog } from "./utils";
 
 export interface Config {
@@ -27,7 +27,7 @@ export interface Config {
   consoleError: boolean;
   meterProvider: any;
   isServerless: boolean;
-  customResourceAttributes: ResourceAttributes;
+  customResourceAttributes: Attributes;
   disabledInstrumentations: string;
   consoleExporter: boolean;
   enableSelfInstrumentation: boolean;
@@ -51,7 +51,7 @@ const WARNINGS = {
     "Missing service name. Specify either MW_SERVICE_NAME environment variable or serviceName in the options parameter.",
 };
 
-let customResourceAttributes: ResourceAttributes = {};
+let customResourceAttributes: Attributes = {};
 
 export let configDefault: Config = {
   DEBUG: false,
