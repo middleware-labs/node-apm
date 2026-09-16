@@ -6,7 +6,10 @@ import {
   LoggerProvider,
   LogRecordExporter,
 } from "@opentelemetry/sdk-logs";
-import { resourceFromAttributes } from "@opentelemetry/resources";
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import fs from "fs";
 import path from "path";
@@ -121,7 +124,13 @@ export const loggerInitializer =  (config: Config) => {
 
   // sdk-logs 2.x removed addLogRecordProcessor; processors are constructor-only.
   const loggerProvider = new LoggerProvider({
-    resource: resourceFromAttributes(resourceAttributes),
+    // OTel 2.x dropped the implicit `Resource.default().merge(...)` the 1.x
+    // tracer provider did, and sdk-node treats an explicit `resource` as a
+    // replacement -- so without this merge the telemetry.sdk.* attributes
+    // disappear. Ours are merged second so they still win on conflict.
+    resource: defaultResource().merge(
+      resourceFromAttributes(resourceAttributes)
+    ),
     processors: [
       new BatchLogRecordProcessor({ exporter: getLogsExporter(config) }),
     ],

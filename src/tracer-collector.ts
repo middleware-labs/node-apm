@@ -10,7 +10,10 @@ import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { CompositePropagator } from "@opentelemetry/core";
 import { B3Propagator, B3InjectEncoding } from "@opentelemetry/propagator-b3";
 import { Config } from "./config";
-import { resourceFromAttributes } from "@opentelemetry/resources";
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from "@opentelemetry/resources";
 import { resourceDetectors } from "./mwresourceDetector";
 import {
   BatchSpanProcessor,
@@ -54,7 +57,13 @@ export const init = (config: Config) => {
         ],
       }),
       resourceDetectors: resourceDetectors(),
-      resource: resourceFromAttributes(resourceAttributes),
+      // OTel 2.x dropped the implicit `Resource.default().merge(...)` the 1.x
+    // tracer provider did, and sdk-node treats an explicit `resource` as a
+    // replacement -- so without this merge the telemetry.sdk.* attributes
+    // disappear. Ours are merged second so they still win on conflict.
+    resource: defaultResource().merge(
+      resourceFromAttributes(resourceAttributes)
+    ),
       // Replaces `traceExporter:`, which NodeSDK would have wrapped in
       // exactly this BatchSpanProcessor -- so batching behaviour and the
       // OTEL_BSP_* env vars are unchanged.
