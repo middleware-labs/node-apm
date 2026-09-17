@@ -15,7 +15,7 @@ import { performHealthCheck } from "./healthcheck";
 import { shutdown } from "./tracer-collector";
 import { ExpressLayerType } from "./config";
 import { Express } from "express";
-import errorHandler from "./errorhandler";
+import ErrorHandler from "./errorhandler";
 
 export const track = (newConfig: Partial<Config> | undefined = {}): void => {
   const config = configInit(newConfig);
@@ -97,7 +97,9 @@ export const getTracer = (
 
 // Function to register the error handler
 export function registerErrorHandler(app: Express): void {
-  app.use(errorHandler);
+  app.use(ErrorHandler);
 }
+
+export const errorHandler = ErrorHandler;
 
 export { ExpressLayerType };
