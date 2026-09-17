@@ -1,6 +1,9 @@
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-grpc";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-import { Resource } from "@opentelemetry/resources";
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from "@opentelemetry/resources";
 import {
   ConsoleMetricExporter,
   MeterProvider,
@@ -42,7 +45,13 @@ export const init = (config: Config): void => {
   addVCSMetadata(resourceAttributes);
 
   const meterProvider = new MeterProvider({
-    resource: new Resource(resourceAttributes),
+    // OTel 2.x dropped the implicit `Resource.default().merge(...)` the 1.x
+    // tracer provider did, and sdk-node treats an explicit `resource` as a
+    // replacement -- so without this merge the telemetry.sdk.* attributes
+    // disappear. Ours are merged second so they still win on conflict.
+    resource: defaultResource().merge(
+      resourceFromAttributes(resourceAttributes)
+    ),
     readers: [metricReader],
   });
   config.meterProvider = meterProvider;
